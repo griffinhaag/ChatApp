@@ -6,6 +6,21 @@ node('app-serverNew')
     /* Let's make sure we have the repository cloned to our workspace */
     checkout scm
     }
+
+      stage('SCA-SAST-SNYK-TEST') 
+      {
+       agent 
+       
+       {
+         label 'ubuntu-Appserver-3120'
+       }
+       
+         snykSecurity(
+            snykInstallation: 'Snyk',
+            snykTokenId: 'Synkid',
+            severity: 'critical'
+         )
+       }
     stage('Build-and-Tag')
     {
         /* This builds the actual image; 
