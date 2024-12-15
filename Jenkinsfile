@@ -12,7 +12,7 @@ node('app-serverNew')
        agent 
        
        {
-         label 'ubuntu-Appserver-3120'
+         label 'app-serverNew'
        }
        
          snykSecurity(
@@ -21,6 +21,36 @@ node('app-serverNew')
             severity: 'critical'
          )
        }
+    stage('SonarQube Analysis') {
+
+            agent {
+
+                label 'app-serverNew'
+
+            }
+
+            steps {
+
+                script {
+
+                    def scannerHome = tool 'sonarqube'
+
+                    withSonarQubeEnv('sonarqube') {
+
+                        sh "${scannerHome}/bin/sonar-scanner \
+
+                            -Dsonar.projectKey=chatapp \
+
+                            -Dsonar.sources=."
+
+                    }
+
+                }
+
+            }
+
+        }
+ 
     stage('Build-and-Tag')
     {
         /* This builds the actual image; 
