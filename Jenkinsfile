@@ -1,68 +1,51 @@
-node('app-serverNew')
-{
+node('app-serverNew') {
     def app
-    stage('Cloning Git')
-    {
-    /* Let's make sure we have the repository cloned to our workspace */
-    checkout scm
+ 
+    stage('Cloning Git') {
+        // Cloning the Git repository to the workspace
+        checkout scm
     }
-
-      stage('SCA-SAST-SNYK-TEST') 
-      {
-       agent 
-       
-       {
-         label 'app-serverNew'
-       }
-       
-         snykSecurity(
+ 
+    stage('SCA-SAST-SNYK-TEST') {
+        // Running Snyk security analysis
+        snykSecurity(
             snykInstallation: 'Snyk',
             snykTokenId: 'synkid',
             severity: 'critical'
-         )
-       }
-    stage('SonarQube Analysis') {
-
-            agent {
-
-                label 'app-serverNew'
-
-            }
-
-            steps {
-
-                script {
-                    def scannerHome = tool 'sonarqube'
-                    withSonarQubeEnv('sonarqube') {
-                        sh "${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=chatapp \
-                            -Dsonar.sources=."
-                    }
-
-                }
-
-            }
-
-        }
+        )
+    }
  
-    stage('Build-and-Tag')
-    {
-        /* This builds the actual image; 
-        * This is synonymous to docker build on the command line */
-        app =docker.build("griffinh00/nodejschatapp_repo")
-    }
-    stage('Post-to-dockerhub')
-    {
-        docker.withRegistry('https://registry.hub.docker.com', 'dockerhub_credentials')
-        {
-         app.push("latest")
+    stage('SonarQube Analysis') {
+        steps {
+            script {
+                // Running SonarQube analysis
+                def scannerHome = tool 'sonarqube'
+                withSonarQubeEnv('sonarqube') {
+                    sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=chatapp \
+                        -Dsonar.sources=.
+                    """
+                }
+            }
         }
     }
-
-    stage('Pull-image-server and deploy')
-    {
+ 
+    stage('Build-and-Tag') {
+        // Building the Docker image
+        app = docker.build("griffinh00/nodejschatapp_repo")
+    }
+ 
+    stage('Post-to-dockerhub') {
+        // Pushing the image to Docker Hub
+        docker.withRegistry('https://registry.hub.docker.com', 'dockerhub_credentials') {
+            app.push("latest")
+        }
+    }
+ 
+    stage('Pull-image-server and deploy') {
+        // Deploying the application using Docker Compose
         sh "docker-compose down"
         sh "docker-compose up -d"
     }
-
 }
